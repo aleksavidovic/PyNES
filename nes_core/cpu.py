@@ -1,5 +1,4 @@
 from numpy import uint8, uint16
-from typing import TYPE_CHECKING
 from .exceptions import NoBusConnectedError
 from .bus import Bus
 

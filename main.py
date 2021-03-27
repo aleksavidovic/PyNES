@@ -19,8 +19,10 @@ def main():
     with open(args.rom_path, 'rb') as rom_file:
         lines = rom_file.readlines()
 
+    bus = Bus()
     cpu = CPU()
-    bus = Bus(cpu)
+    cpu.connect_bus(bus)
+
     cpu.process_instruction(lines[0][0:3])
 
 

@@ -31,6 +31,14 @@ class TestBus(unittest.TestCase):
         with self.assertRaises(ValueError):
             bus.write(0xFFFFF, uint8(0))
 
+    def test_address_in_range(self):
+        bus = Bus()
+        self.assertTrue(bus.address_in_range(uint16(0xAAAA)))
+
+    def test_address_in_range_invalid_address(self):
+        bus = Bus()
+        self.assertFalse(bus.address_in_range(0xFFFF + 1))
+
 
 if __name__ == '__main__':
     unittest.main()

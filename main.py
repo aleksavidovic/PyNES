@@ -1,5 +1,6 @@
 import argparse
 from nes_core.cpu import CPU
+from nes_core.bus import Bus
 
 
 def main():
@@ -19,6 +20,7 @@ def main():
         lines = rom_file.readlines()
 
     cpu = CPU()
+    bus = Bus(cpu)
     cpu.process_instruction(lines[0][0:3])
 
 

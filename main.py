@@ -19,8 +19,7 @@ def main():
         lines = rom_file.readlines()
 
     cpu = CPU()
-
-    print(lines)
+    cpu.process_instruction(lines[0][0:3])
 
 
 if __name__ == '__main__':

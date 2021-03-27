@@ -1,0 +1,2 @@
+class NoBusConnectedError(BaseException):
+    pass

@@ -1,23 +1,35 @@
 import unittest
+from numpy import uint8, uint16
 from nes_core.bus import Bus
-from nes_core.cpu import CPU
 
 
 class TestBus(unittest.TestCase):
     def test_bus(self):
-        cpu = CPU()
-        bus = Bus(cpu)
+        bus = Bus()
         self.assertIsInstance(bus, Bus)
 
     def test_bus_ram_size(self):
-        cpu = CPU()
-        bus = Bus(cpu)
+        bus = Bus()
         self.assertEqual(len(bus.ram), 64 * 1024)
 
     def test_bus_ram_all_initial_zeroes(self):
-        cpu = CPU()
-        bus = Bus(cpu)
+        bus = Bus()
         self.assertEqual(bus.ram, [0] * (64 * 1024))
+
+    def test_write(self):
+        bus = Bus()
+        bus.write(uint16(0), uint8(4))
+        self.assertEqual(bus.ram[0], uint8(4))
+
+    def test_write_bad_type(self):
+        bus = Bus()
+        with self.assertRaises(TypeError):
+            bus.write(uint16(0), str(4))
+
+    def test_write_address_out_of_range(self):
+        bus = Bus()
+        with self.assertRaises(ValueError):
+            bus.write(0xFFFFF, uint8(0))
 
 
 if __name__ == '__main__':

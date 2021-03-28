@@ -31,7 +31,7 @@ class CPU:
             'B': 1 << 4,  # Break
             'U': 1 << 5,  # Unused
             'V': 1 << 6,  # Overflow
-            'N': 1 << 7  # Negative
+            'N': 1 << 7   # Negative
         }
 
         self.instructions_lookup = (
@@ -346,10 +346,36 @@ class CPU:
     def BIT(self):  # Bit  Test
         return 0
 
-    def BMI(self):  # Branch if Minus
+    def BMI(self):
+        """Branch if Minus --
+        If the negative flag is set then add the relative displacement to the program counter to cause a branch to a new
+        location."""
+        if self.status_reg & self.status_map['N']:
+            self.cycles +=1
+            logging.debug("CPU.BMI() - adding 1 CPU cycle")
+            new_addr = self.pc + self.addr_rel
+
+            if (new_addr & 0xFF00) != (self.pc & 0xFF00):
+                self.cycles += 1
+                logging.debug("CPU.BMI() - adding 1 CPU cycle because of paging")
+
+            self.pc = new_addr
         return 0
 
-    def BNE(self):  # Branch if Not Equal
+    def BNE(self):
+        """Branch if Not Equal --
+        If the zero flag is clear then add the relative displacement to the program counter to cause a branch to a new
+        location."""
+        if not self.status_reg & self.status_map['Z']:
+            self.cycles +=1
+            logging.debug("CPU.BNE() - adding 1 CPU cycle")
+            new_addr = self.pc + self.addr_rel
+
+            if (new_addr & 0xFF00) != (self.pc & 0xFF00):
+                self.cycles += 1
+                logging.debug("CPU.BNE() - adding 1 CPU cycle because of paging")
+
+            self.pc = new_addr
         return 0
 
     def BPL(self):  # Branch if Positive

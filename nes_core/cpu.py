@@ -13,8 +13,9 @@ class CPU:
     def __init__(self):
         self.opcode = uint8(0x00)  # Currently processed opcode
         self.cycles = 0  # Cycles left for current opcode
-        self.addr_abs = uint16(0x0000)  # Addr where instruction was called
-        self.addr_rel = uint8(0x00)  # Relative addr for jumps
+        self.addr_abs = uint16(0x0000)  # Address where instruction was called
+        self.addr_rel = uint8(0x00)  # Relative address for jumps
+        self.fetched = uint8(0x00)  # Data fetched for operation
         self.acc_reg = uint8(0x00)  # Accumulator register
         self.x_reg = uint8(0x00)  # X register
         self.y_reg = uint8(0x00)  # Y register
@@ -33,80 +34,250 @@ class CPU:
             'N': 1 << 7  # Negative
         }
 
-        # Making this a 16x16 table for readability, RIP PEP8, RIP 80 char limit
         self.instructions_lookup = (
-            ins("BRK", self.BRK, self.IMM, 7), ins("ORA", self.ORA, self.IZX, 6), ins("???", self.XXX, self.IMP, 2), ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 3), ins("ORA", self.ORA, self.ZP0, 3), ins("ASL", self.ASL, self.ZP0, 5), ins("???", self.XXX, self.IMP, 5), ins("PHP", self.PHP, self.IMP, 3), ins("ORA", self.ORA, self.IMM, 2), ins("ASL", self.ASL, self.IMP, 2), ins("???", self.XXX, self.IMP, 2), ins("???", self.NOP, self.IMP, 4), ins("ORA", self.ORA, self.ABS, 4), ins("ASL", self.ASL, self.ABS, 6), ins("???", self.XXX, self.IMP, 6),
-            ins("BPL", self.BPL, self.REL, 2), ins("ORA", self.ORA, self.IZY, 5), ins("???", self.XXX, self.IMP, 2), ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 4), ins("ORA", self.ORA, self.ZPX, 4), ins("ASL", self.ASL, self.ZPX, 6), ins("???", self.XXX, self.IMP, 6), ins("CLC", self.CLC, self.IMP, 2), ins("ORA", self.ORA, self.ABY, 4), ins("???", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 7), ins("???", self.NOP, self.IMP, 4), ins("ORA", self.ORA, self.ABX, 4), ins("ASL", self.ASL, self.ABX, 7), ins("???", self.XXX, self.IMP, 7),
-            ins("JSR", self.JSR, self.ABS, 6), ins("AND", self.AND, self.IZX, 6), ins("???", self.XXX, self.IMP, 2), ins("???", self.XXX, self.IMP, 8), ins("BIT", self.BIT, self.ZP0, 3), ins("AND", self.AND, self.ZP0, 3), ins("ROL", self.ROL, self.ZP0, 5), ins("???", self.XXX, self.IMP, 5), ins("PLP", self.PLP, self.IMP, 4), ins("AND", self.AND, self.IMM, 2), ins("ROL", self.ROL, self.IMP, 2), ins("???", self.XXX, self.IMP, 2), ins("BIT", self.BIT, self.ABS, 4), ins("AND", self.AND, self.ABS, 4), ins("ROL", self.ROL, self.ABS, 6), ins("???", self.XXX, self.IMP, 6),
-            ins("BMI", self.BMI, self.REL, 2), ins("AND", self.AND, self.IZY, 5), ins("???", self.XXX, self.IMP, 2), ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 4), ins("AND", self.AND, self.ZPX, 4), ins("ROL", self.ROL, self.ZPX, 6), ins("???", self.XXX, self.IMP, 6), ins("SEC", self.SEC, self.IMP, 2), ins("AND", self.AND, self.ABY, 4), ins("???", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 7), ins("???", self.NOP, self.IMP, 4), ins("AND", self.AND, self.ABX, 4), ins("ROL", self.ROL, self.ABX, 7), ins("???", self.XXX, self.IMP, 7),
-            ins("RTI", self.RTI, self.IMP, 6), ins("EOR", self.EOR, self.IZX, 6), ins("???", self.XXX, self.IMP, 2), ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 3), ins("EOR", self.EOR, self.ZP0, 3), ins("LSR", self.LSR, self.ZP0, 5), ins("???", self.XXX, self.IMP, 5), ins("PHA", self.PHA, self.IMP, 3), ins("EOR", self.EOR, self.IMM, 2), ins("LSR", self.LSR, self.IMP, 2), ins("???", self.XXX, self.IMP, 2), ins("JMP", self.JMP, self.ABS, 3), ins("EOR", self.EOR, self.ABS, 4), ins("LSR", self.LSR, self.ABS, 6), ins("???", self.XXX, self.IMP, 6),
-            ins("BVC", self.BVC, self.REL, 2), ins("EOR", self.EOR, self.IZY, 5), ins("???", self.XXX, self.IMP, 2), ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 4), ins("EOR", self.EOR, self.ZPX, 4), ins("LSR", self.LSR, self.ZPX, 6), ins("???", self.XXX, self.IMP, 6), ins("CLI", self.CLI, self.IMP, 2), ins("EOR", self.EOR, self.ABY, 4), ins("???", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 7), ins("???", self.NOP, self.IMP, 4), ins("EOR", self.EOR, self.ABX, 4), ins("LSR", self.LSR, self.ABX, 7), ins("???", self.XXX, self.IMP, 7),
-            ins("RTS", self.RTS, self.IMP, 6), ins("ADC", self.ADC, self.IZX, 6), ins("???", self.XXX, self.IMP, 2), ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 3), ins("ADC", self.ADC, self.ZP0, 3), ins("ROR", self.ROR, self.ZP0, 5), ins("???", self.XXX, self.IMP, 5), ins("PLA", self.PLA, self.IMP, 4), ins("ADC", self.ADC, self.IMM, 2), ins("ROR", self.ROR, self.IMP, 2), ins("???", self.XXX, self.IMP, 2), ins("JMP", self.JMP, self.IND, 5), ins("ADC", self.ADC, self.ABS, 4), ins("ROR", self.ROR, self.ABS, 6), ins("???", self.XXX, self.IMP, 6),
-            ins("BVS", self.BVS, self.REL, 2), ins("ADC", self.ADC, self.IZY, 5), ins("???", self.XXX, self.IMP, 2), ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 4), ins("ADC", self.ADC, self.ZPX, 4), ins("ROR", self.ROR, self.ZPX, 6), ins("???", self.XXX, self.IMP, 6), ins("SEI", self.SEI, self.IMP, 2), ins("ADC", self.ADC, self.ABY, 4), ins("???", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 7), ins("???", self.NOP, self.IMP, 4), ins("ADC", self.ADC, self.ABX, 4), ins("ROR", self.ROR, self.ABX, 7), ins("???", self.XXX, self.IMP, 7),
-            ins("???", self.NOP, self.IMP, 2), ins("STA", self.STA, self.IZX, 6), ins("???", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 6), ins("STY", self.STY, self.ZP0, 3), ins("STA", self.STA, self.ZP0, 3), ins("STX", self.STX, self.ZP0, 3), ins("???", self.XXX, self.IMP, 3), ins("DEY", self.DEY, self.IMP, 2), ins("???", self.NOP, self.IMP, 2), ins("TXA", self.TXA, self.IMP, 2), ins("???", self.XXX, self.IMP, 2), ins("STY", self.STY, self.ABS, 4), ins("STA", self.STA, self.ABS, 4), ins("STX", self.STX, self.ABS, 4), ins("???", self.XXX, self.IMP, 4),
-            ins("BCC", self.BCC, self.REL, 2), ins("STA", self.STA, self.IZY, 6), ins("???", self.XXX, self.IMP, 2), ins("???", self.XXX, self.IMP, 6), ins("STY", self.STY, self.ZPX, 4), ins("STA", self.STA, self.ZPX, 4), ins("STX", self.STX, self.ZPY, 4), ins("???", self.XXX, self.IMP, 4), ins("TYA", self.TYA, self.IMP, 2), ins("STA", self.STA, self.ABY, 5), ins("TXS", self.TXS, self.IMP, 2), ins("???", self.XXX, self.IMP, 5), ins("???", self.NOP, self.IMP, 5), ins("STA", self.STA, self.ABX, 5), ins("???", self.XXX, self.IMP, 5), ins("???", self.XXX, self.IMP, 5),
-            ins("LDY", self.LDY, self.IMM, 2), ins("LDA", self.LDA, self.IZX, 6), ins("LDX", self.LDX, self.IMM, 2), ins("???", self.XXX, self.IMP, 6), ins("LDY", self.LDY, self.ZP0, 3), ins("LDA", self.LDA, self.ZP0, 3), ins("LDX", self.LDX, self.ZP0, 3), ins("???", self.XXX, self.IMP, 3), ins("TAY", self.TAY, self.IMP, 2), ins("LDA", self.LDA, self.IMM, 2), ins("TAX", self.TAX, self.IMP, 2), ins("???", self.XXX, self.IMP, 2), ins("LDY", self.LDY, self.ABS, 4), ins("LDA", self.LDA, self.ABS, 4), ins("LDX", self.LDX, self.ABS, 4), ins("???", self.XXX, self.IMP, 4),
-            ins("BCS", self.BCS, self.REL, 2), ins("LDA", self.LDA, self.IZY, 5), ins("???", self.XXX, self.IMP, 2), ins("???", self.XXX, self.IMP, 5), ins("LDY", self.LDY, self.ZPX, 4), ins("LDA", self.LDA, self.ZPX, 4), ins("LDX", self.LDX, self.ZPY, 4), ins("???", self.XXX, self.IMP, 4), ins("CLV", self.CLV, self.IMP, 2), ins("LDA", self.LDA, self.ABY, 4), ins("TSX", self.TSX, self.IMP, 2), ins("???", self.XXX, self.IMP, 4), ins("LDY", self.LDY, self.ABX, 4), ins("LDA", self.LDA, self.ABX, 4), ins("LDX", self.LDX, self.ABY, 4), ins("???", self.XXX, self.IMP, 4),
-            ins("CPY", self.CPY, self.IMM, 2), ins("CMP", self.CMP, self.IZX, 6), ins("???", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 8), ins("CPY", self.CPY, self.ZP0, 3), ins("CMP", self.CMP, self.ZP0, 3), ins("DEC", self.DEC, self.ZP0, 5), ins("???", self.XXX, self.IMP, 5), ins("INY", self.INY, self.IMP, 2), ins("CMP", self.CMP, self.IMM, 2), ins("DEX", self.DEX, self.IMP, 2), ins("???", self.XXX, self.IMP, 2), ins("CPY", self.CPY, self.ABS, 4), ins("CMP", self.CMP, self.ABS, 4), ins("DEC", self.DEC, self.ABS, 6), ins("???", self.XXX, self.IMP, 6),
-            ins("BNE", self.BNE, self.REL, 2), ins("CMP", self.CMP, self.IZY, 5), ins("???", self.XXX, self.IMP, 2), ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 4), ins("CMP", self.CMP, self.ZPX, 4), ins("DEC", self.DEC, self.ZPX, 6), ins("???", self.XXX, self.IMP, 6), ins("CLD", self.CLD, self.IMP, 2), ins("CMP", self.CMP, self.ABY, 4), ins("NOP", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 7), ins("???", self.NOP, self.IMP, 4), ins("CMP", self.CMP, self.ABX, 4), ins("DEC", self.DEC, self.ABX, 7), ins("???", self.XXX, self.IMP, 7),
-            ins("CPX", self.CPX, self.IMM, 2), ins("SBC", self.SBC, self.IZX, 6), ins("???", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 8), ins("CPX", self.CPX, self.ZP0, 3), ins("SBC", self.SBC, self.ZP0, 3), ins("INC", self.INC, self.ZP0, 5), ins("???", self.XXX, self.IMP, 5), ins("INX", self.INX, self.IMP, 2), ins("SBC", self.SBC, self.IMM, 2), ins("NOP", self.NOP, self.IMP, 2), ins("???", self.SBC, self.IMP, 2), ins("CPX", self.CPX, self.ABS, 4), ins("SBC", self.SBC, self.ABS, 4), ins("INC", self.INC, self.ABS, 6), ins("???", self.XXX, self.IMP, 6),
-            ins("BEQ", self.BEQ, self.REL, 2), ins("SBC", self.SBC, self.IZY, 5), ins("???", self.XXX, self.IMP, 2), ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 4), ins("SBC", self.SBC, self.ZPX, 4), ins("INC", self.INC, self.ZPX, 6), ins("???", self.XXX, self.IMP, 6), ins("SED", self.SED, self.IMP, 2), ins("SBC", self.SBC, self.ABY, 4), ins("NOP", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 7), ins("???", self.NOP, self.IMP, 4), ins("SBC", self.SBC, self.ABX, 4), ins("INC", self.INC, self.ABX, 7), ins("???", self.XXX, self.IMP, 7),
+            ins("BRK", self.BRK, self.IMM, 7), ins("ORA", self.ORA, self.IZX, 6), ins("???", self.XXX, self.IMP, 2),
+            ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 3), ins("ORA", self.ORA, self.ZP0, 3),
+            ins("ASL", self.ASL, self.ZP0, 5), ins("???", self.XXX, self.IMP, 5), ins("PHP", self.PHP, self.IMP, 3),
+            ins("ORA", self.ORA, self.IMM, 2), ins("ASL", self.ASL, self.IMP, 2), ins("???", self.XXX, self.IMP, 2),
+            ins("???", self.NOP, self.IMP, 4), ins("ORA", self.ORA, self.ABS, 4), ins("ASL", self.ASL, self.ABS, 6),
+            ins("???", self.XXX, self.IMP, 6),
+            ins("BPL", self.BPL, self.REL, 2), ins("ORA", self.ORA, self.IZY, 5), ins("???", self.XXX, self.IMP, 2),
+            ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 4), ins("ORA", self.ORA, self.ZPX, 4),
+            ins("ASL", self.ASL, self.ZPX, 6), ins("???", self.XXX, self.IMP, 6), ins("CLC", self.CLC, self.IMP, 2),
+            ins("ORA", self.ORA, self.ABY, 4), ins("???", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 7),
+            ins("???", self.NOP, self.IMP, 4), ins("ORA", self.ORA, self.ABX, 4), ins("ASL", self.ASL, self.ABX, 7),
+            ins("???", self.XXX, self.IMP, 7),
+            ins("JSR", self.JSR, self.ABS, 6), ins("AND", self.AND, self.IZX, 6), ins("???", self.XXX, self.IMP, 2),
+            ins("???", self.XXX, self.IMP, 8), ins("BIT", self.BIT, self.ZP0, 3), ins("AND", self.AND, self.ZP0, 3),
+            ins("ROL", self.ROL, self.ZP0, 5), ins("???", self.XXX, self.IMP, 5), ins("PLP", self.PLP, self.IMP, 4),
+            ins("AND", self.AND, self.IMM, 2), ins("ROL", self.ROL, self.IMP, 2), ins("???", self.XXX, self.IMP, 2),
+            ins("BIT", self.BIT, self.ABS, 4), ins("AND", self.AND, self.ABS, 4), ins("ROL", self.ROL, self.ABS, 6),
+            ins("???", self.XXX, self.IMP, 6),
+            ins("BMI", self.BMI, self.REL, 2), ins("AND", self.AND, self.IZY, 5), ins("???", self.XXX, self.IMP, 2),
+            ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 4), ins("AND", self.AND, self.ZPX, 4),
+            ins("ROL", self.ROL, self.ZPX, 6), ins("???", self.XXX, self.IMP, 6), ins("SEC", self.SEC, self.IMP, 2),
+            ins("AND", self.AND, self.ABY, 4), ins("???", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 7),
+            ins("???", self.NOP, self.IMP, 4), ins("AND", self.AND, self.ABX, 4), ins("ROL", self.ROL, self.ABX, 7),
+            ins("???", self.XXX, self.IMP, 7),
+            ins("RTI", self.RTI, self.IMP, 6), ins("EOR", self.EOR, self.IZX, 6), ins("???", self.XXX, self.IMP, 2),
+            ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 3), ins("EOR", self.EOR, self.ZP0, 3),
+            ins("LSR", self.LSR, self.ZP0, 5), ins("???", self.XXX, self.IMP, 5), ins("PHA", self.PHA, self.IMP, 3),
+            ins("EOR", self.EOR, self.IMM, 2), ins("LSR", self.LSR, self.IMP, 2), ins("???", self.XXX, self.IMP, 2),
+            ins("JMP", self.JMP, self.ABS, 3), ins("EOR", self.EOR, self.ABS, 4), ins("LSR", self.LSR, self.ABS, 6),
+            ins("???", self.XXX, self.IMP, 6),
+            ins("BVC", self.BVC, self.REL, 2), ins("EOR", self.EOR, self.IZY, 5), ins("???", self.XXX, self.IMP, 2),
+            ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 4), ins("EOR", self.EOR, self.ZPX, 4),
+            ins("LSR", self.LSR, self.ZPX, 6), ins("???", self.XXX, self.IMP, 6), ins("CLI", self.CLI, self.IMP, 2),
+            ins("EOR", self.EOR, self.ABY, 4), ins("???", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 7),
+            ins("???", self.NOP, self.IMP, 4), ins("EOR", self.EOR, self.ABX, 4), ins("LSR", self.LSR, self.ABX, 7),
+            ins("???", self.XXX, self.IMP, 7),
+            ins("RTS", self.RTS, self.IMP, 6), ins("ADC", self.ADC, self.IZX, 6), ins("???", self.XXX, self.IMP, 2),
+            ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 3), ins("ADC", self.ADC, self.ZP0, 3),
+            ins("ROR", self.ROR, self.ZP0, 5), ins("???", self.XXX, self.IMP, 5), ins("PLA", self.PLA, self.IMP, 4),
+            ins("ADC", self.ADC, self.IMM, 2), ins("ROR", self.ROR, self.IMP, 2), ins("???", self.XXX, self.IMP, 2),
+            ins("JMP", self.JMP, self.IND, 5), ins("ADC", self.ADC, self.ABS, 4), ins("ROR", self.ROR, self.ABS, 6),
+            ins("???", self.XXX, self.IMP, 6),
+            ins("BVS", self.BVS, self.REL, 2), ins("ADC", self.ADC, self.IZY, 5), ins("???", self.XXX, self.IMP, 2),
+            ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 4), ins("ADC", self.ADC, self.ZPX, 4),
+            ins("ROR", self.ROR, self.ZPX, 6), ins("???", self.XXX, self.IMP, 6), ins("SEI", self.SEI, self.IMP, 2),
+            ins("ADC", self.ADC, self.ABY, 4), ins("???", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 7),
+            ins("???", self.NOP, self.IMP, 4), ins("ADC", self.ADC, self.ABX, 4), ins("ROR", self.ROR, self.ABX, 7),
+            ins("???", self.XXX, self.IMP, 7),
+            ins("???", self.NOP, self.IMP, 2), ins("STA", self.STA, self.IZX, 6), ins("???", self.NOP, self.IMP, 2),
+            ins("???", self.XXX, self.IMP, 6), ins("STY", self.STY, self.ZP0, 3), ins("STA", self.STA, self.ZP0, 3),
+            ins("STX", self.STX, self.ZP0, 3), ins("???", self.XXX, self.IMP, 3), ins("DEY", self.DEY, self.IMP, 2),
+            ins("???", self.NOP, self.IMP, 2), ins("TXA", self.TXA, self.IMP, 2), ins("???", self.XXX, self.IMP, 2),
+            ins("STY", self.STY, self.ABS, 4), ins("STA", self.STA, self.ABS, 4), ins("STX", self.STX, self.ABS, 4),
+            ins("???", self.XXX, self.IMP, 4),
+            ins("BCC", self.BCC, self.REL, 2), ins("STA", self.STA, self.IZY, 6), ins("???", self.XXX, self.IMP, 2),
+            ins("???", self.XXX, self.IMP, 6), ins("STY", self.STY, self.ZPX, 4), ins("STA", self.STA, self.ZPX, 4),
+            ins("STX", self.STX, self.ZPY, 4), ins("???", self.XXX, self.IMP, 4), ins("TYA", self.TYA, self.IMP, 2),
+            ins("STA", self.STA, self.ABY, 5), ins("TXS", self.TXS, self.IMP, 2), ins("???", self.XXX, self.IMP, 5),
+            ins("???", self.NOP, self.IMP, 5), ins("STA", self.STA, self.ABX, 5), ins("???", self.XXX, self.IMP, 5),
+            ins("???", self.XXX, self.IMP, 5),
+            ins("LDY", self.LDY, self.IMM, 2), ins("LDA", self.LDA, self.IZX, 6), ins("LDX", self.LDX, self.IMM, 2),
+            ins("???", self.XXX, self.IMP, 6), ins("LDY", self.LDY, self.ZP0, 3), ins("LDA", self.LDA, self.ZP0, 3),
+            ins("LDX", self.LDX, self.ZP0, 3), ins("???", self.XXX, self.IMP, 3), ins("TAY", self.TAY, self.IMP, 2),
+            ins("LDA", self.LDA, self.IMM, 2), ins("TAX", self.TAX, self.IMP, 2), ins("???", self.XXX, self.IMP, 2),
+            ins("LDY", self.LDY, self.ABS, 4), ins("LDA", self.LDA, self.ABS, 4), ins("LDX", self.LDX, self.ABS, 4),
+            ins("???", self.XXX, self.IMP, 4),
+            ins("BCS", self.BCS, self.REL, 2), ins("LDA", self.LDA, self.IZY, 5), ins("???", self.XXX, self.IMP, 2),
+            ins("???", self.XXX, self.IMP, 5), ins("LDY", self.LDY, self.ZPX, 4), ins("LDA", self.LDA, self.ZPX, 4),
+            ins("LDX", self.LDX, self.ZPY, 4), ins("???", self.XXX, self.IMP, 4), ins("CLV", self.CLV, self.IMP, 2),
+            ins("LDA", self.LDA, self.ABY, 4), ins("TSX", self.TSX, self.IMP, 2), ins("???", self.XXX, self.IMP, 4),
+            ins("LDY", self.LDY, self.ABX, 4), ins("LDA", self.LDA, self.ABX, 4), ins("LDX", self.LDX, self.ABY, 4),
+            ins("???", self.XXX, self.IMP, 4),
+            ins("CPY", self.CPY, self.IMM, 2), ins("CMP", self.CMP, self.IZX, 6), ins("???", self.NOP, self.IMP, 2),
+            ins("???", self.XXX, self.IMP, 8), ins("CPY", self.CPY, self.ZP0, 3), ins("CMP", self.CMP, self.ZP0, 3),
+            ins("DEC", self.DEC, self.ZP0, 5), ins("???", self.XXX, self.IMP, 5), ins("INY", self.INY, self.IMP, 2),
+            ins("CMP", self.CMP, self.IMM, 2), ins("DEX", self.DEX, self.IMP, 2), ins("???", self.XXX, self.IMP, 2),
+            ins("CPY", self.CPY, self.ABS, 4), ins("CMP", self.CMP, self.ABS, 4), ins("DEC", self.DEC, self.ABS, 6),
+            ins("???", self.XXX, self.IMP, 6),
+            ins("BNE", self.BNE, self.REL, 2), ins("CMP", self.CMP, self.IZY, 5), ins("???", self.XXX, self.IMP, 2),
+            ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 4), ins("CMP", self.CMP, self.ZPX, 4),
+            ins("DEC", self.DEC, self.ZPX, 6), ins("???", self.XXX, self.IMP, 6), ins("CLD", self.CLD, self.IMP, 2),
+            ins("CMP", self.CMP, self.ABY, 4), ins("NOP", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 7),
+            ins("???", self.NOP, self.IMP, 4), ins("CMP", self.CMP, self.ABX, 4), ins("DEC", self.DEC, self.ABX, 7),
+            ins("???", self.XXX, self.IMP, 7),
+            ins("CPX", self.CPX, self.IMM, 2), ins("SBC", self.SBC, self.IZX, 6), ins("???", self.NOP, self.IMP, 2),
+            ins("???", self.XXX, self.IMP, 8), ins("CPX", self.CPX, self.ZP0, 3), ins("SBC", self.SBC, self.ZP0, 3),
+            ins("INC", self.INC, self.ZP0, 5), ins("???", self.XXX, self.IMP, 5), ins("INX", self.INX, self.IMP, 2),
+            ins("SBC", self.SBC, self.IMM, 2), ins("NOP", self.NOP, self.IMP, 2), ins("???", self.SBC, self.IMP, 2),
+            ins("CPX", self.CPX, self.ABS, 4), ins("SBC", self.SBC, self.ABS, 4), ins("INC", self.INC, self.ABS, 6),
+            ins("???", self.XXX, self.IMP, 6),
+            ins("BEQ", self.BEQ, self.REL, 2), ins("SBC", self.SBC, self.IZY, 5), ins("???", self.XXX, self.IMP, 2),
+            ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 4), ins("SBC", self.SBC, self.ZPX, 4),
+            ins("INC", self.INC, self.ZPX, 6), ins("???", self.XXX, self.IMP, 6), ins("SED", self.SED, self.IMP, 2),
+            ins("SBC", self.SBC, self.ABY, 4), ins("NOP", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 7),
+            ins("???", self.NOP, self.IMP, 4), ins("SBC", self.SBC, self.ABX, 4), ins("INC", self.INC, self.ABX, 7),
+            ins("???", self.XXX, self.IMP, 7),
         )
 
     # 12 Addressing modes
     # Each addressing mode function returns an int indicating
     # the number of additional clock cycles required for it
     def IMP(self):
+        """IMP - Implied Addressing Mode
+        Instruction doesn't operate on data, so no data is provided
+        It might use accumulator register so that is fetched just in case"""
         logging.debug("IMP addressing mode activated")
+        self.fetched = self.acc_reg
         return 0
 
     def IMM(self):
+        """IMM - Immediate Mode Addressing
+        Data is supplied as a part of the instruction
+        """
         logging.debug("IMM addressing mode activated")
+        self.pc += 1
+        self.addr_abs = self.pc
         return 0
 
     def ZP0(self):
+        """ZP0 - Zero Page Addressing"""
         logging.debug("ZP0 addressing mode activated")
+        self.addr_abs = self.read_from_bus(self.pc)
+        self.pc += 1
+        self.addr_abs &= 0x00FF
         return 0
 
     def ZPX(self):
+        """ZPX - Zero Page Addressing with X Register Offset"""
         logging.debug("ZPX addressing mode activated")
+        self.addr_abs = (self.read_from_bus(self.pc) + self.x_reg)
+        self.pc += 1
+        self.addr_abs &= 0x00FF
         return 0
 
     def ZPY(self):
+        """ZPY - Zero Page Addressing with Y Register Offset"""
         logging.debug("ZPY addressing mode activated")
+        self.addr_abs = (self.read_from_bus(self.pc) + self.y_reg)
+        self.pc += 1
+        self.addr_abs &= 0x00FF
         return 0
 
     def REL(self):
-        logging.debug("REL addressing mode activated")
+        logging.debug("REL - Relative addressing mode activated")
+        self.addr_rel = self.read_from_bus(self.pc)
+        self.pc += 1
+        if self.addr_rel & 0x80:
+            self.addr_rel |= 0xFF00
         return 0
 
     def ABS(self):
+        """ABS - Absolute Addressing Mode"""
         logging.debug("ABS addressing mode activated")
+        lo = self.read_from_bus(self.pc)
+        self.pc += 1
+        hi = self.read_from_bus(self.pc)
+        self.pc += 1
+
+        self.addr_abs = (hi << 8) | lo
         return 0
 
     def ABX(self):
+        """ABX - Absolute Addressing with X Register Offset"""
         logging.debug("ABX addressing mode activated")
-        return 0
+        lo = self.read_from_bus(self.pc)
+        self.pc += 1
+        hi = self.read_from_bus(self.pc)
+        self.pc += 1
+
+        self.addr_abs = (hi << 8) | lo
+        self.addr_abs += self.x_reg
+
+        if (self.addr_abs & 0xFF00) != (hi << 8):
+            return 1
+        else:
+            return 0
 
     def ABY(self):
+        """ABY - Absolute Addressing with Y Register Offset"""
         logging.debug("ABY addressing mode activated")
-        return 0
+        lo = self.read_from_bus(self.pc)
+        self.pc += 1
+        hi = self.read_from_bus(self.pc)
+        self.pc += 1
+
+        self.addr_abs = (hi << 8) | lo
+        self.addr_abs += self.y_reg
+
+        if (self.addr_abs & 0xFF00) != (hi << 8):
+            return 1
+        else:
+            return 0
 
     def IND(self):
+        """IND - Indirect Addressing Mode"""
         logging.debug("IND addressing mode activated")
+        ptr_lo = self.read_from_bus(self.pc)
+        self.pc += 1
+        ptr_hi = self.read_from_bus(self.pc)
+        self.pc += 1
+        ptr = (ptr_hi << 8) | ptr_lo
+
+        if ptr_lo == 0x00FF:  # Simulate page boundary hardware bug
+            self.addr_abs = (self.read_from_bus(ptr & 0xFF00) << 8) | self.read_from_bus(ptr + 0)
+        else:  # Behave normally
+            self.addr_abs = (self.read_from_bus(ptr + 1) << 8) | self.read_from_bus(ptr + 0)
+
         return 0
 
     def IZX(self):
+        """IZX - Indirect Addressing of the Zero page with X Register Offset"""
         logging.debug("IZX addressing mode activated")
+        t = self.read_from_bus(self.pc)
+        self.pc += 1
+
+        lo = self.read_from_bus(uint16(t + uint16(self.x_reg)) & 0x00FF)
+        hi = self.read_from_bus(uint16(t + uint16(self.x_reg) + 1) & 0x00FF)
+
+        self.addr_abs = (hi << 8) | lo
+
         return 0
 
     def IZY(self):
+        """IZY - Indirect Addressing of the Zero page with Y Register Offset"""
         logging.debug("IZY addressing mode activated")
+        t = self.read_from_bus(self.pc)
+        self.pc += 1
+
+        lo = self.read_from_bus(t & 0x00FF)
+        hi = self.read_from_bus((t + 1) & 0x00FF)
+
+        self.addr_abs = (hi << 8) | lo
+        self.addr_abs += self.y_reg
+
+        if (self.addr_abs & 0xFF00) != (hi << 8):
+            return 1
+        else:
+            return 0
+
         return 0
 
-    # TODO: 56 Opcodes
     # OPERATIONS
-    def XXX(self):  #  illegal opcode handler
+    def XXX(self):  # Illegal opcode handler
         return 0
 
     def ADC(self):  # Add with carry
@@ -301,6 +472,7 @@ class CPU:
         if self.cycles == 0:
             self.opcode = self.read_from_bus(self.pc)
             self.pc += 1
+
             instruction = self.instructions_lookup[self.opcode]
             logging.debug(f'Executing instruction {instruction.mnemonic}')
 
@@ -310,7 +482,7 @@ class CPU:
             # Address mode and operation can require additional cycles
             additional_cycles_addr_mode = instruction.addr_mode()
             additional_cycles_operation = instruction.operation()
-            self.cycles += additional_cycles_addr_mode + additional_cycles_operation
+            self.cycles += (additional_cycles_addr_mode & additional_cycles_operation)
 
         self.cycles -= 1
 

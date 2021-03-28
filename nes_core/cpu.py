@@ -397,10 +397,36 @@ class CPU:
     def BRK(self):  # Force Interrupt (Break)
         return 0
 
-    def BVC(self):  # Branch if Overflow Clear
+    def BVC(self):
+        """Branch if Overflow Clear --
+        If the overflow flag is clear then add the relative displacement to the program counter to cause a branch to a
+        new location."""
+        if not self.status_reg & self.status_map['V']:
+            self.cycles += 1
+            logging.debug("CPU.BVC() - adding 1 CPU cycle")
+            new_addr = self.pc + self.addr_rel
+
+            if (new_addr & 0xFF00) != (self.pc & 0xFF00):
+                self.cycles += 1
+                logging.debug("CPU.BVC() - adding 1 CPU cycle because of paging")
+
+            self.pc = new_addr
         return 0
 
-    def BVS(self):  # Branch if Overflow Set
+    def BVS(self):
+        """Branch if Overflow Set --
+        If the overflow flag is clear then add the relative displacement to the program counter to cause a branch to a
+        new location."""
+        if self.status_reg & self.status_map['V']:
+            self.cycles += 1
+            logging.debug("CPU.BVS() - adding 1 CPU cycle")
+            new_addr = self.pc + self.addr_rel
+
+            if (new_addr & 0xFF00) != (self.pc & 0xFF00):
+                self.cycles += 1
+                logging.debug("CPU.BVS() - adding 1 CPU cycle because of paging")
+
+            self.pc = new_addr
         return 0
 
     def CLC(self):  # Clear Carry Flag

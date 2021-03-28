@@ -153,6 +153,54 @@ class TestCPUInstructions(unittest.TestCase):
         self.cpu.clock()
         self.assertEqual(self.cpu.cycles, 1)
 
+    def test_BVC_no_paging(self):
+        self.bus.write(uint16(0x00FE), uint8(0x50))  # 0x50 is code for BVC
+        self.bus.write(uint16(0x00FF), uint8(0x0F))  # address passed
+        self.cpu.status_reg = uint8(0b00000000)
+        self.cpu.pc = 0x00FE
+        self.cpu.clock()
+        self.assertEqual(self.cpu.cycles, 2)
+
+    def test_BVC_with_paging(self):
+        self.bus.write(uint16(0x00FE), uint8(0x50))  # 0x50 is code for BVC
+        self.bus.write(uint16(0x00FF), uint8(0xFF))  # address passed
+        self.cpu.status_reg = uint8(0b00000000)
+        self.cpu.pc = 0x00FE
+        self.cpu.clock()
+        self.assertEqual(self.cpu.cycles, 3)
+
+    def test_BVC_overflow_set(self):
+        self.bus.write(uint16(0x00FE), uint8(0x50))  # 0x50 is code for BVC
+        self.bus.write(uint16(0x00FF), uint8(0x0F))  # address passed
+        self.cpu.status_reg = uint8(0b11110110)
+        self.cpu.pc = 0x00FE
+        self.cpu.clock()
+        self.assertEqual(self.cpu.cycles, 1)
+
+    def test_BVS_no_paging(self):
+        self.bus.write(uint16(0x00FE), uint8(0x70))  # 0x70 is code for BVS
+        self.bus.write(uint16(0x00FF), uint8(0x0F))  # address passed
+        self.cpu.status_reg = uint8(0b01000000)
+        self.cpu.pc = 0x00FE
+        self.cpu.clock()
+        self.assertEqual(self.cpu.cycles, 2)
+
+    def test_BVS_with_paging(self):
+        self.bus.write(uint16(0x00FE), uint8(0x70))  # 0x70 is code for BVS
+        self.bus.write(uint16(0x00FF), uint8(0xFF))  # address passed
+        self.cpu.status_reg = uint8(0b01000000)
+        self.cpu.pc = 0x00FE
+        self.cpu.clock()
+        self.assertEqual(self.cpu.cycles, 3)
+
+    def test_BVS_overflow_not_set(self):
+        self.bus.write(uint16(0x00FE), uint8(0x70))  # 0x70 is code for BVS
+        self.bus.write(uint16(0x00FF), uint8(0x0F))  # address passed
+        self.cpu.status_reg = uint8(0b10110110)
+        self.cpu.pc = 0x00FE
+        self.cpu.clock()
+        self.assertEqual(self.cpu.cycles, 1)
+
     def test_BRK(self):
         self.bus.write(uint16(0x0000), uint8(0x00))
         self.cpu.clock()

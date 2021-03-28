@@ -106,25 +106,49 @@ class TestCPUInstructions(unittest.TestCase):
         self.assertEqual(self.cpu.cycles, 1)
 
     def test_BNE_no_paging(self):
-        self.bus.write(uint16(0x00FE), uint8(0xD0))  # 0x30 is code for BMI
+        self.bus.write(uint16(0x00FE), uint8(0xD0))  # 0xD0 is code for BNE
         self.bus.write(uint16(0x00FF), uint8(0x0F))  # address passed
-        self.cpu.status_reg = uint8(0b10000000)
+        self.cpu.status_reg = uint8(0b00000000)
         self.cpu.pc = 0x00FE
         self.cpu.clock()
         self.assertEqual(self.cpu.cycles, 2)
 
     def test_BNE_with_paging(self):
-        self.bus.write(uint16(0x00FE), uint8(0xD0))  # 0x30 is code for BMI
+        self.bus.write(uint16(0x00FE), uint8(0xD0))  # 0xD0 is code for BNE
         self.bus.write(uint16(0x00FF), uint8(0xFF))  # address passed
-        self.cpu.status_reg = uint8(0b10000000)
+        self.cpu.status_reg = uint8(0b00000000)
         self.cpu.pc = 0x00FE
         self.cpu.clock()
         self.assertEqual(self.cpu.cycles, 3)
 
     def test_BNE_no_negative(self):
-        self.bus.write(uint16(0x00FE), uint8(0xD0))  # 0x30 is code for BMI
+        self.bus.write(uint16(0x00FE), uint8(0xD0))  # 0xD0 is code for BNE
         self.bus.write(uint16(0x00FF), uint8(0x0F))  # address passed
         self.cpu.status_reg = uint8(0b00110110)
+        self.cpu.pc = 0x00FE
+        self.cpu.clock()
+        self.assertEqual(self.cpu.cycles, 1)
+
+    def test_BPL_no_paging(self):
+        self.bus.write(uint16(0x00FE), uint8(0x10))  # 0x10 is code for BPL
+        self.bus.write(uint16(0x00FF), uint8(0x0F))  # address passed
+        self.cpu.status_reg = uint8(0b00000000)
+        self.cpu.pc = 0x00FE
+        self.cpu.clock()
+        self.assertEqual(self.cpu.cycles, 2)
+
+    def test_BPL_with_paging(self):
+        self.bus.write(uint16(0x00FE), uint8(0x10))  # 0x10 is code for BPL
+        self.bus.write(uint16(0x00FF), uint8(0xFF))  # address passed
+        self.cpu.status_reg = uint8(0b00000000)
+        self.cpu.pc = 0x00FE
+        self.cpu.clock()
+        self.assertEqual(self.cpu.cycles, 3)
+
+    def test_BPL_no_negative(self):
+        self.bus.write(uint16(0x00FE), uint8(0x10))  # 0x10 is code for BPL
+        self.bus.write(uint16(0x00FF), uint8(0x0F))  # address passed
+        self.cpu.status_reg = uint8(0b10110110)
         self.cpu.pc = 0x00FE
         self.cpu.clock()
         self.assertEqual(self.cpu.cycles, 1)

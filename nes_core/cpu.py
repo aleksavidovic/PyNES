@@ -351,7 +351,7 @@ class CPU:
         If the negative flag is set then add the relative displacement to the program counter to cause a branch to a new
         location."""
         if self.status_reg & self.status_map['N']:
-            self.cycles +=1
+            self.cycles += 1
             logging.debug("CPU.BMI() - adding 1 CPU cycle")
             new_addr = self.pc + self.addr_rel
 
@@ -367,7 +367,7 @@ class CPU:
         If the zero flag is clear then add the relative displacement to the program counter to cause a branch to a new
         location."""
         if not self.status_reg & self.status_map['Z']:
-            self.cycles +=1
+            self.cycles += 1
             logging.debug("CPU.BNE() - adding 1 CPU cycle")
             new_addr = self.pc + self.addr_rel
 
@@ -378,7 +378,20 @@ class CPU:
             self.pc = new_addr
         return 0
 
-    def BPL(self):  # Branch if Positive
+    def BPL(self):
+        """Branch if Positive --
+        If the negative flag is clear then add the relative displacement to the program counter to cause a branch to a
+        new location."""
+        if not self.status_reg & self.status_map['N']:
+            self.cycles += 1
+            logging.debug("CPU.BPL() - adding 1 CPU cycle")
+            new_addr = self.pc + self.addr_rel
+
+            if (new_addr & 0xFF00) != (self.pc & 0xFF00):
+                self.cycles += 1
+                logging.debug("CPU.BPL() - adding 1 CPU cycle because of paging")
+
+            self.pc = new_addr
         return 0
 
     def BRK(self):  # Force Interrupt (Break)

@@ -2,6 +2,7 @@ from numpy import uint8, uint16
 from .exceptions import NoBusConnectedError
 from bitstring import BitArray
 from .bus import Bus
+
 """
 status register enum:
 C = (1 << 0) # Carry bit
@@ -17,95 +18,68 @@ N = (1 << 7) # Carry bit
 
 class CPU:
     def __init__(self):
-        self.opcode = uint8(0x00)       # Currently processed opcode
-        self.cycles = 0                 # Cycles left for current opcode
+        self.opcode = uint8(0x00)  # Currently processed opcode
+        self.cycles = 0  # Cycles left for current opcode
         self.addr_abs = uint16(0x0000)  # Addr where instruction was called
-        self.addr_rel = uint8(0x00)     # Relative addr for jumps
-        self.acc_reg = uint8(0x00)      # Accumulator register
-        self.x_reg = uint8(0x00)        # X register
-        self.y_reg = uint8(0x00)        # Y register
-        self.stkp = uint8(0x00)         # Stack Pointer
-        self.pc = uint16(0x0000)        # Program Counter
-        self.status_reg = uint8(0x00)   # Status Register
+        self.addr_rel = uint8(0x00)  # Relative addr for jumps
+        self.acc_reg = uint8(0x00)  # Accumulator register
+        self.x_reg = uint8(0x00)  # X register
+        self.y_reg = uint8(0x00)  # Y register
+        self.stkp = uint8(0x00)  # Stack Pointer
+        self.pc = uint16(0x0000)  # Program Counter
+        self.status_reg = uint8(0x00)  # Status Register
         self.bus = None
         self.status_map = {
-                            'C': 1 << 0,  # Carry bit
-                            'Z': 1 << 1,  # Zero
-                            'I': 1 << 2,  # Disable Interrupts
-                            'D': 1 << 3,  # Decimal Mode (Unsupported)
-                            'B': 1 << 4,  # Break
-                            'U': 1 << 5,  # Unused
-                            'V': 1 << 6,  # Overflow
-                            'N': 1 << 7   # Negative
-                    }
+            'C': 1 << 0,  # Carry bit
+            'Z': 1 << 1,  # Zero
+            'I': 1 << 2,  # Disable Interrupts
+            'D': 1 << 3,  # Decimal Mode (Unsupported)
+            'B': 1 << 4,  # Break
+            'U': 1 << 5,  # Unused
+            'V': 1 << 6,  # Overflow
+            'N': 1 << 7  # Negative
+        }
 
-        # 12 Addressing modes
-        # IMP IMM
-        # ZP0 ZPX
-        # ZPY REL
-        # ABS ABX
-        # ABY IND
-        # IZX IZY
+        self.instructions_lookup = [
+            {
+                # 0x00
+                'name': 'BRK',
+                'operation': self.BRK,
+                'addr_mode': self.IMM,
+                'cycles': 7
+            },
+            {
+                # 0x01
+                'name': 'ORA',
+                'operation': self.ORA,
+                'addr_mode': self.IZX,
+                'cycles': 6
+            }
+        ]
 
-        # 56 Opcodes
-        # LDA
-        # LDX
-        # LDY
-        # STA
-        # STX
+    # 12 Addressing modes
+    # IMP IMM
+    # ZP0 ZPX
+    # ZPY REL
+    # ABS ABX
+    # ABY IND
+    # IZX IZY
 
-        # STY
-        # TXA
-        # TYA
-        # TXS
-        # TAY
-        # TAX
-        # TSX
+    def IMM(self):
+        return 0
 
-        # PHP
-        # PLP
-        # PHA
-        # PLA
+    def IZX(self):
+        return 0
 
-        # ADC
-        # SBC
-        # CMP
-        # CPX
-        # CPY
+    # TODO: 56 Opcodes
+    # OPERATIONS
+    def BRK(self):
+        return 0
 
-        # AND
-        # EOR
-        # ORA
-        # BIT
+    def ORA(self):
+        return 0
 
-        # ASL
-        # LSR
-        # ROL
-        # ROR
-
-        # INC
-        # INX
-        # INY
-        # DEC
-        # DEX
-        # DEY
-
-        # CLC
-        # CLI
-        # CLV
-        # CLD
-        # SEC
-        # SEI
-        # SED
-
-        # NOP
-        # BRK
-
-        # JMP
-        # JSR
-        # RTS
-        # RTI
-
+    # I/O methods
     def process_instruction(self, instruction: bytes):
         # TODO process instruction
         print(instruction)
@@ -126,7 +100,20 @@ class CPU:
             raise NoBusConnectedError
 
     def clock(self):
-        pass
+        if self.cycles == 0:
+            self.opcode = self.read_from_bus(self.pc)
+            self.pc += 1
+            instruction = self.instructions_lookup[self.opcode]
+
+            # Get starting number of cycles
+            self.cycles = instruction['cycles']
+
+            # Address mode and operation can require additional cycles
+            additional_cycles_addr_mode = instruction['addr_mode']()
+            additional_cycles_operation = instruction['operation']()
+            self.cycles += additional_cycles_addr_mode + additional_cycles_operation
+
+        self.cycles -= 1
 
     def illegal_opcode(self):
         pass

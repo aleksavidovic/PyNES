@@ -1,19 +1,9 @@
 from numpy import uint8, uint16
+import logging
 from .exceptions import NoBusConnectedError
-from bitstring import BitArray
 from .bus import Bus
 
-"""
-status register enum:
-C = (1 << 0) # Carry bit
-Z = (1 << 1) # Carry bit
-I = (1 << 2) # Carry bit
-D = (1 << 3) # Carry bit
-B = (1 << 4) # Carry bit
-U = (1 << 5) # Carry bit
-V = (1 << 6) # Carry bit
-N = (1 << 7) # Carry bit
-"""
+logging.basicConfig(level=logging.DEBUG)
 
 
 class CPU:
@@ -58,6 +48,8 @@ class CPU:
         ]
 
     # 12 Addressing modes
+    # Each addressing mode function returns an int indicating
+    # the number of additional clock cycles required for it
     # IMP IMM
     # ZP0 ZPX
     # ZPY REL
@@ -66,9 +58,11 @@ class CPU:
     # IZX IZY
 
     def IMM(self):
+        logging.debug("IMM addressing mode activated")
         return 0
 
     def IZX(self):
+        logging.debug("IZX addressing mode activated")
         return 0
 
     # TODO: 56 Opcodes

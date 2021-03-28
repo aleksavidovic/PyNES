@@ -27,6 +27,14 @@ class TestCPU(unittest.TestCase):
         cpu.write_to_bus(uint16(0), uint8(1))
         self.assertEqual(bus.read(uint16(0)), uint8(1))
 
+    def test_BRK_instruction(self):
+        bus = Bus()
+        bus.write(uint16(0x0000), uint8(0x00))
+        cpu = CPU()
+        cpu.connect_bus(bus)
+        cpu.clock()
+        self.assertEqual(cpu.cycles, 6)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -27,7 +27,7 @@ class TestCPU(unittest.TestCase):
         self.assertEqual(self.bus.read(uint16(0)), uint8(1))
 
 
-class TestCPUInstructions(unittest.TestCase):
+class TestCPUBranchingInstructions(unittest.TestCase):
     def setUp(self) -> None:
         self.bus = Bus()
         self.cpu = CPU()
@@ -201,10 +201,24 @@ class TestCPUInstructions(unittest.TestCase):
         self.cpu.clock()
         self.assertEqual(self.cpu.cycles, 1)
 
+
+class TestCPUInstructions(unittest.TestCase):
+    def setUp(self) -> None:
+        self.bus = Bus()
+        self.cpu = CPU()
+        self.cpu.connect_bus(self.bus)
+
     def test_BRK(self):
         self.bus.write(uint16(0x0000), uint8(0x00))
         self.cpu.clock()
         self.assertEqual(self.cpu.cycles, 6)
+
+    def test_CLC(self):
+        self.cpu.status_reg |= self.cpu.status_map['C']
+        self.bus.write(uint16(0x0000), uint8(0x18))
+        self.cpu.clock()
+        self.assertFalse(self.cpu.status_reg & self.cpu.status_map['C'])
+
 
 
 if __name__ == '__main__':

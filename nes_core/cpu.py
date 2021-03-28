@@ -429,7 +429,10 @@ class CPU:
             self.pc = new_addr
         return 0
 
-    def CLC(self):  # Clear Carry Flag
+    def CLC(self):
+        """Clear Carry Flag --
+        C = 0"""
+        self.status_reg ^= self.status_map['C']
         return 0
 
     def CLD(self):  # Clear Decimal Mode

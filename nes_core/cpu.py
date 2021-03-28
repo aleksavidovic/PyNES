@@ -8,6 +8,7 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s')
 
 ins = namedtuple('Instruction', ['mnemonic', 'operation', 'addr_mode', 'cycles'])
 
+
 class CPU:
     def __init__(self):
         self.opcode = uint8(0x00)  # Currently processed opcode
@@ -51,27 +52,6 @@ class CPU:
             ins("CPX", self.CPX, self.IMM, 2), ins("SBC", self.SBC, self.IZX, 6), ins("???", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 8), ins("CPX", self.CPX, self.ZP0, 3), ins("SBC", self.SBC, self.ZP0, 3), ins("INC", self.INC, self.ZP0, 5), ins("???", self.XXX, self.IMP, 5), ins("INX", self.INX, self.IMP, 2), ins("SBC", self.SBC, self.IMM, 2), ins("NOP", self.NOP, self.IMP, 2), ins("???", self.SBC, self.IMP, 2), ins("CPX", self.CPX, self.ABS, 4), ins("SBC", self.SBC, self.ABS, 4), ins("INC", self.INC, self.ABS, 6), ins("???", self.XXX, self.IMP, 6),
             ins("BEQ", self.BEQ, self.REL, 2), ins("SBC", self.SBC, self.IZY, 5), ins("???", self.XXX, self.IMP, 2), ins("???", self.XXX, self.IMP, 8), ins("???", self.NOP, self.IMP, 4), ins("SBC", self.SBC, self.ZPX, 4), ins("INC", self.INC, self.ZPX, 6), ins("???", self.XXX, self.IMP, 6), ins("SED", self.SED, self.IMP, 2), ins("SBC", self.SBC, self.ABY, 4), ins("NOP", self.NOP, self.IMP, 2), ins("???", self.XXX, self.IMP, 7), ins("???", self.NOP, self.IMP, 4), ins("SBC", self.SBC, self.ABX, 4), ins("INC", self.INC, self.ABX, 7), ins("???", self.XXX, self.IMP, 7),
         )
-        """
-        {
-            # 0x00
-            'mnemonic': 'BRK',
-            'operation': self.BRK,
-            'addr_mode': self.IMM,
-            'cycles': 7
-        },
-        {
-            # 0x01
-            'mnemonic': 'ORA',
-            'operation': self.ORA,
-            'addr_mode': self.IZX,
-            'cycles': 6
-        },
-        {
-            # 0x02
-            'mnemonic': '???',
-            'operation': self.XXX,
-        }
-        """
 
     # 12 Addressing modes
     # Each addressing mode function returns an int indicating
@@ -126,18 +106,175 @@ class CPU:
 
     # TODO: 56 Opcodes
     # OPERATIONS
-    def XXX(self):
-        #  illegal opcode handler
+    def XXX(self):  #  illegal opcode handler
         return 0
 
-    def NOP(self):
-        # Non-official opcode handler
-        return 1
-
-    def BRK(self):
+    def ADC(self):  # Add with carry
         return 0
 
-    def ORA(self):
+    def AND(self):  # Logical AND
+        return 0
+
+    def ASL(self):  # Arithmetic shift left
+        return 0
+
+    def BCC(self):  # Branch if Carry Clear
+        return 0
+
+    def BCS(self):  # Branch if Carry Set
+        return 0
+
+    def BEQ(self):  # Branch if Equal
+        return 0
+
+    def BIT(self):  # Bit  Test
+        return 0
+
+    def BMI(self):  # Branch if Minus
+        return 0
+
+    def BNE(self):  # Branch if Not Equal
+        return 0
+
+    def BPL(self):  # Branch if Positive
+        return 0
+
+    def BRK(self):  # Force Interrupt (Break)
+        return 0
+
+    def BVC(self):  # Branch if Overflow Clear
+        return 0
+
+    def BVS(self):  # Branch if Overflow Set
+        return 0
+
+    def CLC(self):  # Clear Carry Flag
+        return 0
+
+    def CLD(self):  # Clear Decimal Mode
+        return 0
+
+    def CLI(self):  # Clear Interrupt Disable
+        return 0
+
+    def CLV(self):  # Clear Overflow Flag
+        return 0
+
+    def CMP(self):  # Compare
+        return 0
+
+    def CPX(self):  # Compare X Register
+        return 0
+
+    def CPY(self):  # Compare Y Register
+        return 0
+
+    def DEC(self):  # Decrement Memory
+        return 0
+
+    def DEX(self):  # Decrement X Register
+        return 0
+
+    def DEY(self):  # Decrement Y register
+        return 0
+
+    def EOR(self):  # Exclusive OR
+        return 0
+
+    def INC(self):  # Increment Memory
+        return 0
+
+    def INX(self):  # Increment X Register
+        return 0
+
+    def INY(self):  # Increment Y Register
+        return 0
+
+    def JMP(self):  # Jump
+        return 0
+
+    def JSR(self):  # Jump to Subroutine
+        return 0
+
+    def LDA(self):  # Load Accumulator
+        return 0
+
+    def LDX(self):  # Load X Register
+        return 0
+
+    def LDY(self):  # Load Y register
+        return 0
+
+    def LSR(self):  # Logical Shift Right
+        return 0
+
+    def NOP(self):  # No Operation (for non-official opcodes)
+        return 0
+
+    def ORA(self):  # Logical Inclusive OR
+        return 0
+
+    def PHA(self):  # Push Accumulator
+        return 0
+
+    def PHP(self):  # Push Processor Status
+        return 0
+
+    def PLA(self):  # Pull Accumulator
+        return 0
+
+    def PLP(self):  # Pull Processor Status
+        return 0
+
+    def ROL(self):  # Rotate Left
+        return 0
+
+    def ROR(self):  # Rotate Right
+        return 0
+
+    def RTI(self):  # Return from Interrupt
+        return 0
+
+    def RTS(self):  # Return from subroutine
+        return 0
+
+    def SBC(self):  # Substract with carry
+        return 0
+
+    def SEC(self):  # Set Carry Flag
+        return 0
+
+    def SED(self):  # Set Decimal Flag
+        return 0
+
+    def SEI(self):  # Set Interrupt Disable
+        return 0
+
+    def STA(self):  # Store Accumulator
+        return 0
+
+    def STX(self):  # Store Register X
+        return 0
+
+    def STY(self):  # Store Register Y
+        return 0
+
+    def TAX(self):  # Transfer Accumulator to X
+        return 0
+
+    def TAY(self):  # Transfer Accumulator to Y
+        return 0
+
+    def TSX(self):  # Transfer Stack Pointer to X
+        return 0
+
+    def TXA(self):  # Transfer X to Accumulator
+        return 0
+
+    def TXS(self):  # Transfer X to Stack Pointer
+        return 0
+
+    def TYA(self):  # Transfer Y to Accumulator
         return 0
 
     # I/O methods

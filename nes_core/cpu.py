@@ -283,20 +283,53 @@ class CPU:
     def ADC(self):  # Add with carry
         return 0
 
-    def AND(self):  # Logical AND
-        return 0
+    def AND(self):
+        """Logical AND
+        Performs a logical AND operation between accumulator value and value fetched from memory
+        a = a & fetched"""
+        self.fetch()
+        self.acc_reg = self.acc_reg & self.fetched
+        # Set a Zero status flag if acc_reg == 0
+        if self.acc_reg == 0x00:
+            self.status_reg = self.status_reg & self.status_map['Z']
+        # Set a Negative flag if acc_reg has bit 7 on
+        if self.acc_reg & 0x80:
+            self.status_reg = self.status_reg & self.status_map['N']
+
+        return 1
 
     def ASL(self):  # Arithmetic shift left
         return 0
 
-    def BCC(self):  # Branch if Carry Clear
+    def BCC(self):
+        """Branch if Carry Clear"""
+        if not self.status_reg & self.status_map['C']:
+            self.cycles += 1
+            new_addr = self.pc + self.addr_rel
+
+            if (new_addr & 0xFF00) != (self.pc & 0xFF00):
+                self.cycles += 1
+
+            self.pc = new_addr
         return 0
 
-    def BCS(self):  # Branch if Carry Set
+    def BCS(self):
+        """Branch if Carry Bit is set to 1"""
+        if self.status_reg & self.status_map['C']:
+            self.cycles += 1
+            logging.debug("BCS adding 1 CPU cycle")
+            new_addr = self.pc + self.addr_rel
+            logging.debug(f"BCS: pc = {hex(self.pc)}, addr_rel = {hex(self.addr_rel)}, new_addr = {hex(new_addr)}")
+
+            if (new_addr & 0xFF00) != (self.pc & 0xFF00):  # if page-related bits are not the same
+                self.cycles += 1
+                logging.debug("BCS adding 1 CPU cycle becasuse of paging")
+
+            self.pc = new_addr
         return 0
 
     def BEQ(self):  # Branch if Equal
-        return 0
+        pass
 
     def BIT(self):  # Bit  Test
         return 0
@@ -501,4 +534,5 @@ class CPU:
     def fetch(self):
         if self.instructions_lookup[self.opcode].addr_mode is not self.IMP:
             self.fetched = self.read_from_bus(self.addr_abs)
+            logging.debug(f'Fetched {self.fetched} from memory address {hex(self.addr_abs)}')
         return self.fetched

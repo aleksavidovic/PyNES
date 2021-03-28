@@ -432,19 +432,29 @@ class CPU:
     def CLC(self):
         """Clear Carry Flag --
         C = 0"""
-        self.status_reg ^= self.status_map['C']
+        if self.status_reg & self.status_map['C']:
+            self.status_reg ^= self.status_map['C']
         return 0
 
     def CLD(self):
         """Clear Decimal Mode Flag --
         D = 0"""
-        self.status_reg ^= self.status_map['D']
+        if self.status_reg & self.status_map['D']:
+            self.status_reg ^= self.status_map['D']
         return 0
 
-    def CLI(self):  # Clear Interrupt Disable
+    def CLI(self):  #
+        """ Clear Interrupt Disable --
+        I = 0"""
+        if self.status_reg & self.status_map['I']:
+            self.status_reg ^= self.status_map['I']
         return 0
 
-    def CLV(self):  # Clear Overflow Flag
+    def CLV(self):  #
+        """Clear Overflow Flag --
+        V = 0"""
+        if self.status_reg & self.status_map['V']:
+            self.status_reg ^= self.status_map['V']
         return 0
 
     def CMP(self):  # Compare

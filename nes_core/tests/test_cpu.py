@@ -225,6 +225,18 @@ class TestCPUInstructions(unittest.TestCase):
         self.cpu.clock()
         self.assertFalse(self.cpu.status_reg & self.cpu.status_map['D'])
 
+    def test_CLI(self):
+        self.cpu.status_reg |= self.cpu.status_map['I']
+        self.bus.write(uint16(0x0000), uint8(0x58))
+        self.cpu.clock()
+        self.assertFalse(self.cpu.status_reg & self.cpu.status_map['I'])
+
+    def test_CLV(self):
+        self.cpu.status_reg |= self.cpu.status_map['V']
+        self.bus.write(uint16(0x0000), uint8(0xB8))
+        self.cpu.clock()
+        self.assertFalse(self.cpu.status_reg & self.cpu.status_map['V'])
+
 
 if __name__ == '__main__':
     unittest.main()

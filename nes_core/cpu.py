@@ -141,7 +141,7 @@ class CPU:
         Instruction doesn't operate on data, so no data is provided
         It might use accumulator register so that is fetched just in case"""
         logging.debug("IMP addressing mode activated")
-        self.fetched = self.acc_reg
+        self.fetched = self.acc_reg  # consider moving into fetch method
         return 0
 
     def IMM(self):
@@ -499,4 +499,6 @@ class CPU:
         pass
 
     def fetch(self):
-        pass
+        if self.instructions_lookup[self.opcode].addr_mode is not self.IMP:
+            self.fetched = self.read_from_bus(self.addr_abs)
+        return self.fetched

@@ -435,7 +435,10 @@ class CPU:
         self.status_reg ^= self.status_map['C']
         return 0
 
-    def CLD(self):  # Clear Decimal Mode
+    def CLD(self):
+        """Clear Decimal Mode Flag --
+        D = 0"""
+        self.status_reg ^= self.status_map['D']
         return 0
 
     def CLI(self):  # Clear Interrupt Disable

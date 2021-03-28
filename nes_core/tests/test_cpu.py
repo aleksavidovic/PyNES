@@ -219,6 +219,11 @@ class TestCPUInstructions(unittest.TestCase):
         self.cpu.clock()
         self.assertFalse(self.cpu.status_reg & self.cpu.status_map['C'])
 
+    def test_CLD(self):
+        self.cpu.status_reg |= self.cpu.status_map['D']
+        self.bus.write(uint16(0x0000), uint8(0xD8))
+        self.cpu.clock()
+        self.assertFalse(self.cpu.status_reg & self.cpu.status_map['D'])
 
 
 if __name__ == '__main__':

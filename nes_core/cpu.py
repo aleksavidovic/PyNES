@@ -4,7 +4,7 @@ import logging
 from .exceptions import NoBusConnectedError
 from .bus import Bus
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 ins = namedtuple('Instruction', ['mnemonic', 'operation', 'addr_mode', 'cycles'])
 
@@ -178,7 +178,7 @@ class CPU:
         return 0
 
     def REL(self):
-        logging.debug("REL - Relative addressing mode activated")
+        logging.debug("CPU.REL() - Relative addressing mode activated")
         self.addr_rel = self.read_from_bus(self.pc)
         self.pc += 1
         if self.addr_rel & 0x80:
@@ -317,19 +317,31 @@ class CPU:
         """Branch if Carry Bit is set to 1"""
         if self.status_reg & self.status_map['C']:
             self.cycles += 1
-            logging.debug("BCS adding 1 CPU cycle")
+            logging.debug("CPU.BCS() - adding 1 CPU cycle")
             new_addr = self.pc + self.addr_rel
-            logging.debug(f"BCS: pc = {hex(self.pc)}, addr_rel = {hex(self.addr_rel)}, new_addr = {hex(new_addr)}")
 
             if (new_addr & 0xFF00) != (self.pc & 0xFF00):  # if page-related bits are not the same
                 self.cycles += 1
-                logging.debug("BCS adding 1 CPU cycle becasuse of paging")
+                logging.debug("CPU.BCS() - adding 1 CPU cycle because of paging")
 
             self.pc = new_addr
         return 0
 
-    def BEQ(self):  # Branch if Equal
-        pass
+    def BEQ(self):
+        """Branch if Equal --
+        If the zero flag is set then add the relative displacement to the program counter to cause a branch to a new
+        location."""
+        if self.status_reg & self.status_map['Z']:
+            self.cycles +=1
+            logging.debug("CPU.BEQ() - adding 1 CPU cycle")
+            new_addr = self.pc + self.addr_rel
+
+            if (new_addr & 0xFF00) != (self.pc & 0xFF00):
+                self.cycles += 1
+                logging.debug("CPU.BEQ() - adding 1 CPU cycle because of paging")
+
+            self.pc = new_addr
+        return 0
 
     def BIT(self):  # Bit  Test
         return 0
@@ -507,17 +519,20 @@ class CPU:
             self.pc += 1
 
             instruction = self.instructions_lookup[self.opcode]
-            logging.debug(f'Executing instruction {instruction.mnemonic}')
+            logging.debug(f'CPU.clock() - executing instruction {instruction.mnemonic}')
 
             # Get starting number of cycles
             self.cycles = instruction.cycles
+            logging.debug(f"CPU.clock() - setting cycles to: {instruction.cycles}")
 
             # Address mode and operation can require additional cycles
             additional_cycles_addr_mode = instruction.addr_mode()
             additional_cycles_operation = instruction.operation()
+            logging.debug(f"CPU.clock() - adding {additional_cycles_addr_mode & additional_cycles_operation} additional cycles")
             self.cycles += (additional_cycles_addr_mode & additional_cycles_operation)
 
         self.cycles -= 1
+        logging.debug(f"CPU.clock() - clock cycle finished. Remaining cycles: {self.cycles}")
 
     def illegal_opcode(self):
         pass
